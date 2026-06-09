@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Matcher</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f11;--surface:#18181c;--surface2:#222228;--surface3:#2a2a32;
+  --border:#2e2e36;--border-light:#3a3a45;
+  --text:#e8e8f0;--text-muted:#7a7a8a;--text-dim:#4a4a5a;
+  --accent:#7c6af7;--accent-light:#9d8fff;--accent-glow:rgba(124,106,247,0.15);
+  --green:#3dd68c;--green-bg:rgba(61,214,140,0.1);
+  --amber:#f0a430;--amber-bg:rgba(240,164,48,0.1);
+  --blue:#4aa8f0;--red:#f06060;
+  --c1049:#7c6af7;--c1011:#3dd68c;--c1003:#f0a430;
+  --radius:10px;--radius-sm:6px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;overflow:hidden}
+
+/* HEADER */
+header{padding:11px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg);z-index:200;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;letter-spacing:-0.01em}
+.logo-icon{width:26px;height:26px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.header-right{display:flex;align-items:center;gap:6px}
+.header-stat{font-size:11px;color:var(--text-muted);padding:4px 10px;border:1px solid var(--border);border-radius:20px;font-family:'IBM Plex Mono',monospace}
+.header-stat b{color:var(--text);font-weight:600}
+.btn-batch-receipt{padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-muted);font-size:11px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s;display:flex;align-items:center;gap:5px;margin-left:8px}
+.btn-batch-receipt:hover{border-color:var(--accent);color:var(--accent-light)}
+
+/* APP SHELL */
+.app{display:grid;grid-template-columns:320px 1fr;height:calc(100vh - 49px)}
+
+/* ===== LEFT PANEL ===== */
+.left-panel{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+
+/* ACCOUNT TABS */
+.account-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.acct-tab{flex:1;padding:10px 6px 8px;background:transparent;border:none;border-bottom:2px solid transparent;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;transition:all 0.15s;text-align:center}
+.acct-tab:hover{color:var(--text)}
+.acct-tab.active-1049{color:var(--c1049);border-bottom-color:var(--c1049)}
+.acct-tab.active-1011{color:var(--c1011);border-bottom-color:var(--c1011)}
+.acct-tab.active-1003{color:var(--c1003);border-bottom-color:var(--c1003)}
+.acct-tab .tab-sub{display:block;font-size:10px;opacity:0.6;font-weight:400;margin-top:1px}
+
+/* MONTH SELECTOR */
+.month-bar{display:flex;align-items:center;gap:0;padding:0 12px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+.month-bar::-webkit-scrollbar{display:none}
+.month-tab{padding:8px 10px;background:transparent;border:none;border-bottom:2px solid transparent;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all 0.15s;white-space:nowrap;position:relative}
+.month-tab:hover{color:var(--text)}
+.month-tab.active{color:var(--text);border-bottom-color:var(--border-light)}
+.month-tab.active.done-1049{color:var(--c1049);border-bottom-color:var(--c1049)}
+.month-tab.active.done-1011{color:var(--c1011);border-bottom-color:var(--c1011)}
+.month-tab.active.done-1003{color:var(--c1003);border-bottom-color:var(--c1003)}
+.month-tab .mo-dot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-left:4px;vertical-align:middle}
+.mo-dot-complete-1049{background:var(--c1049)}
+.mo-dot-complete-1011{background:var(--c1011)}
+.mo-dot-complete-1003{background:var(--c1003)}
+.mo-dot-partial{background:var(--amber)}
+.month-add{padding:7px 9px;background:transparent;border:none;color:var(--text-dim);font-size:15px;cursor:pointer;transition:color 0.15s;font-family:'Inter',sans-serif;align-self:center}
+.month-add:hover{color:var(--accent-light)}
+
+/* UPLOAD ZONE */
+.upload-zone{margin:12px;border:1.5px dashed var(--border-light);border-radius:var(--radius);padding:20px 16px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface)}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:var(--accent-glow)}
+.upload-zone.c1049:hover,.upload-zone.drag-over.c1049{border-color:var(--c1049);background:rgba(124,106,247,0.1)}
+.upload-zone.c1011:hover,.upload-zone.drag-over.c1011{border-color:var(--c1011);background:rgba(61,214,140,0.1)}
+.upload-zone.c1003:hover,.upload-zone.drag-over.c1003{border-color:var(--c1003);background:rgba(240,164,48,0.1)}
+.upload-icon{font-size:22px;margin-bottom:5px;opacity:0.45}
+.upload-zone p{font-size:12px;color:var(--text-muted)}
+.upload-zone .ustrong{font-weight:600}
+.ustrong.c1049{color:var(--c1049)}.ustrong.c1011{color:var(--c1011)}.ustrong.c1003{color:var(--c1003)}
+.upload-zone .usub{font-size:10px;color:var(--text-dim);margin-top:3px}
+
+/* STATEMENT COMPLETE BANNER */
+.stmt-complete-banner{margin:0 12px 8px;padding:8px 12px;border-radius:var(--radius-sm);display:none;align-items:center;gap:8px;font-size:12px;font-weight:600}
+.stmt-complete-banner.show{display:flex}
+.banner-1049{background:rgba(124,106,247,0.12);border:1px solid rgba(124,106,247,0.3);color:var(--c1049)}
+.banner-1011{background:rgba(61,214,140,0.1);border:1px solid rgba(61,214,140,0.25);color:var(--c1011)}
+.banner-1003{background:rgba(240,164,48,0.1);border:1px solid rgba(240,164,48,0.25);color:var(--c1003)}
+
+/* PROGRESS */
+.progress-bar{height:2px;background:var(--border);margin:0 12px 2px;border-radius:1px;overflow:hidden;flex-shrink:0}
+.progress-fill{height:100%;border-radius:1px;transition:width 0.4s ease}
+.pf-1049{background:var(--c1049)}.pf-1011{background:var(--c1011)}.pf-1003{background:var(--c1003)}
+.progress-label{font-size:10px;color:var(--text-dim);padding:0 12px 4px;display:flex;justify-content:space-between}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:4px;padding:6px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0}
+.fp{padding:3px 8px;border:1px solid var(--border);border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;color:var(--text-muted);background:transparent;transition:all 0.15s;font-family:'Inter',sans-serif;text-transform:uppercase;letter-spacing:0.04em}
+.fp:hover{border-color:var(--border-light);color:var(--text)}
+.fp.fa-1049{border-color:var(--c1049);color:var(--c1049);background:rgba(124,106,247,0.1)}
+.fp.fa-1011{border-color:var(--c1011);color:var(--c1011);background:rgba(61,214,140,0.1)}
+.fp.fa-1003{border-color:var(--c1003);color:var(--c1003);background:rgba(240,164,48,0.1)}
+
+/* TXN LIST */
+.txn-scroll{flex:1;overflow-y:auto;padding:8px 12px 12px}
+.txn-scroll::-webkit-scrollbar{width:3px}
+.txn-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.txn-item{border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:all 0.15s;background:var(--surface);position:relative}
+.txn-item:hover{border-color:var(--border-light);background:var(--surface2)}
+.txn-item.sel-1049{border-color:var(--c1049);background:rgba(124,106,247,0.1)}
+.txn-item.sel-1011{border-color:var(--c1011);background:rgba(61,214,140,0.08)}
+.txn-item.sel-1003{border-color:var(--c1003);background:rgba(240,164,48,0.08)}
+.txn-item.done::after{content:'✓';position:absolute;top:9px;right:10px;color:var(--green);font-size:11px;font-weight:700}
+.txn-item.has-receipt::before{content:'📎';position:absolute;bottom:8px;right:10px;font-size:10px}
+.txn-row1{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px;padding-right:16px}
+.txn-merchant{font-weight:600;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:175px}
+.txn-amt{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--text);flex-shrink:0}
+.txn-row2{font-size:10px;color:var(--text-muted);display:flex;gap:5px;flex-wrap:wrap}
+.txn-row3{margin-top:5px;display:flex;gap:4px;flex-wrap:wrap}
+.ttag{display:inline-flex;align-items:center;padding:1px 6px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em}
+.ttag-seg{background:rgba(74,168,240,0.15);color:var(--blue)}
+.ttag-personal{background:var(--amber-bg);color:var(--amber)}
+.ttag-employee{background:var(--green-bg);color:var(--green)}
+.ttag-rebill{background:var(--accent-glow);color:var(--accent-light)}
+.ttag-refund{background:rgba(240,96,96,0.12);color:var(--red)}
+.receipt-matched{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:20px;font-size:10px;font-weight:500;background:rgba(61,214,140,0.08);color:var(--green);border:1px solid rgba(61,214,140,0.2)}
+.empty-list{text-align:center;padding:32px 16px;color:var(--text-dim);font-size:12px}
+
+/* ===== RIGHT PANEL ===== */
+.right-panel{display:flex;flex-direction:column;overflow:hidden}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-dim);gap:10px}
+.empty-icon{font-size:34px;opacity:0.2}
+.empty-state p{font-size:13px}
+
+/* DETAIL */
+.detail-panel{flex:1;overflow-y:auto;padding:18px;display:none;flex-direction:column;gap:14px}
+.detail-panel.visible{display:flex}
+.detail-panel::-webkit-scrollbar{width:3px}
+.detail-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.dcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.dcard-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:12px}
+
+/* TXN DETAIL INFO */
+.card-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;margin-bottom:12px}
+.chip-1049{background:rgba(124,106,247,0.15);color:var(--c1049);border:1px solid rgba(124,106,247,0.3)}
+.chip-1011{background:rgba(61,214,140,0.12);color:var(--c1011);border:1px solid rgba(61,214,140,0.3)}
+.chip-1003{background:rgba(240,164,48,0.12);color:var(--c1003);border:1px solid rgba(240,164,48,0.3)}
+.merchant-lg{font-size:18px;font-weight:700;letter-spacing:-0.02em;margin-bottom:12px;line-height:1.2}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.info-grid.three{grid-template-columns:1fr 1fr 1fr}
+.ifield label{display:block;font-size:10px;color:var(--text-muted);margin-bottom:2px;font-weight:500}
+.ifield p{font-size:13px;font-weight:500}
+.ifield p.mono{font-family:'IBM Plex Mono',monospace}
+.desc-full{font-size:11px;color:var(--text-muted);line-height:1.4;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);margin-top:10px}
+
+/* EXPENSE TYPE */
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tbtn{padding:9px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text-muted);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;text-align:left}
+.tbtn:hover{border-color:var(--border-light);color:var(--text)}
+.tbtn.ta-seg{border-color:var(--blue);background:rgba(74,168,240,0.1);color:var(--blue)}
+.tbtn.ta-personal{border-color:var(--amber);background:var(--amber-bg);color:var(--amber)}
+.tbtn.ta-employee{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+.tbtn.ta-rebill{border-color:var(--accent);background:var(--accent-glow);color:var(--accent-light)}
+.tbtn.ta-refund{border-color:var(--red);background:rgba(240,96,96,0.1);color:var(--red)}
+
+/* REBILL SECTION */
+.rebill-wrap{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.rebill-wrap.show{display:block}
+.rebill-wrap>label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);display:block;margin-bottom:7px}
+.rebill-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}
+.rbtn{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text-muted);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;text-align:left}
+.rbtn:hover{border-color:var(--border-light);color:var(--text)}
+.rbtn.active{border-color:var(--accent);background:var(--accent-glow);color:var(--accent-light)}
+
+/* NOTES */
+textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Inter',sans-serif;font-size:12px;padding:8px 10px;resize:vertical;min-height:58px;outline:none;transition:border-color 0.15s}
+textarea:focus{border-color:var(--accent)}
+textarea::placeholder{color:var(--text-dim)}
+
+/* RECEIPTS */
+.receipt-drop{border:1.5px dashed var(--border-light);border-radius:var(--radius-sm);padding:14px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface2)}
+.receipt-drop:hover,.receipt-drop.drag-over{border-color:var(--accent);background:var(--accent-glow)}
+.receipt-drop p{font-size:12px;color:var(--text-muted)}
+.receipt-drop .rhint{font-size:10px;color:var(--text-dim);margin-top:2px}
+.receipt-gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.rthumb{aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);position:relative;background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.rthumb img{width:100%;height:100%;object-fit:cover}
+.rthumb .rremove{position:absolute;top:3px;right:3px;width:15px;height:15px;background:rgba(0,0,0,0.75);border:none;border-radius:50%;color:#fff;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s}
+.rthumb:hover .rremove{opacity:1}
+.rthumb .rlabel{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.65);font-size:9px;padding:2px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-muted)}
+.rthumb.auto-matched{border-color:var(--green);box-shadow:0 0 0 1px rgba(61,214,140,0.3)}
+.rthumb .match-badge{position:absolute;top:3px;left:3px;background:var(--green);color:#0a1f12;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px}
+
+/* SAVE ROW */
+.save-row{display:flex;gap:7px;padding:0 18px 18px;flex-shrink:0}
+.btn-save{flex:1;padding:10px;border:none;border-radius:var(--radius-sm);color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.15s}
+.btn-save:hover{opacity:0.88}
+.bs-1049{background:var(--c1049)}.bs-1011{background:var(--c1011);color:#0a1f12}.bs-1003{background:var(--c1003);color:#1a0f00}
+.btn-clear{padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-muted);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;transition:all 0.15s}
+.btn-clear:hover{color:var(--text);border-color:var(--border-light)}
+
+/* BATCH RECEIPT MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:560px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:14px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:2px 6px;transition:color 0.15s}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+
+/* BATCH UPLOAD ZONE */
+.batch-drop{border:2px dashed var(--border-light);border-radius:var(--radius);padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface2);margin-bottom:16px}
+.batch-drop:hover,.batch-drop.drag-over{border-color:var(--accent);background:var(--accent-glow)}
+.batch-drop .bd-icon{font-size:32px;margin-bottom:8px;opacity:0.5}
+.batch-drop p{font-size:13px;color:var(--text-muted)}
+.batch-drop .bdsub{font-size:11px;color:var(--text-dim);margin-top:4px}
+
+/* MATCH RESULTS */
+.match-results{display:flex;flex-direction:column;gap:6px}
+.match-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.match-row.matched{border-color:var(--green);background:var(--green-bg)}
+.match-row.unmatched{border-color:var(--border)}
+.match-file{font-size:12px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.match-arrow{font-size:14px;color:var(--text-dim);flex-shrink:0}
+.match-txn{font-size:11px;color:var(--text-muted);flex:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.match-txn.found{color:var(--green)}
+.match-score{font-size:10px;color:var(--text-dim);flex-shrink:0;font-family:'IBM Plex Mono',monospace}
+.match-select{flex-shrink:0}
+select.match-picker{background:var(--surface3);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif;font-size:11px;padding:3px 6px;border-radius:var(--radius-sm);cursor:pointer;outline:none;max-width:150px}
+select.match-picker:focus{border-color:var(--accent)}
+.email-hint{padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.5}
+.email-hint strong{color:var(--text-muted);display:block;margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em}
+.email-hint code{font-family:'IBM Plex Mono',monospace;background:var(--surface3);padding:1px 5px;border-radius:3px;color:var(--accent-light)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--green);color:#0a2018;padding:8px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;opacity:0;transform:translateY(6px);transition:all 0.22s;z-index:999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* SCAN ROWS */
+.scan-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px}
+.scan-row.scanning{border-color:var(--amber)}
+.scan-row.scanned{border-color:var(--green)}
+.scan-row.scan-err{border-color:var(--border)}
+.scan-status{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px}
+.scan-spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.scan-filename{font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.scan-extracted{font-size:11px;color:var(--text-muted);flex:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scan-extracted.found{color:var(--green)}
+
+/* MATCH GROUPS */
+.match-group{margin-bottom:14px}
+.match-group-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:6px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;display:flex;justify-content:space-between}
+.match-group-header span{font-family:'IBM Plex Mono',monospace;font-weight:400;text-transform:none;letter-spacing:0}
+.match-row{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:5px}
+.match-row.matched{border-color:rgba(61,214,140,0.4);background:rgba(61,214,140,0.05)}
+.match-row.unmatched{opacity:0.7}
+.match-thumb{width:32px;height:32px;border-radius:4px;overflow:hidden;flex-shrink:0;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid var(--border)}
+.match-thumb img{width:100%;height:100%;object-fit:cover}
+.match-info{flex:1;min-width:0}
+.match-info .mi-file{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.match-info .mi-extracted{font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.match-arrow{font-size:12px;color:var(--text-dim);flex-shrink:0}
+.match-txn-info{flex:1.4;min-width:0}
+.match-txn-info .mt-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.match-txn-info .mt-name.found{color:var(--green)}
+.match-txn-info .mt-name.none{color:var(--text-dim);font-style:italic;font-weight:400}
+.match-txn-info .mt-meta{font-size:10px;color:var(--text-muted)}
+.match-conf{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--text-dim);flex-shrink:0;width:30px;text-align:right}
+.match-select select{background:var(--surface3);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif;font-size:11px;padding:3px 5px;border-radius:var(--radius-sm);cursor:pointer;outline:none;max-width:170px}
+.match-select select:focus{border-color:var(--accent)}
+
+
+/* EXPORT MODAL */
+.export-format-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.efmt-btn{padding:14px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text-muted);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
+.efmt-btn:hover{border-color:var(--border-light);color:var(--text)}
+.efmt-btn.selected-xlsx{border-color:var(--green);background:rgba(61,214,140,0.1);color:var(--green)}
+.efmt-btn.selected-pdf{border-color:var(--accent);background:var(--accent-glow);color:var(--accent-light)}
+.efmt-btn .efmt-icon{font-size:22px}
+.efmt-btn .efmt-label{font-size:12px;font-weight:600}
+.efmt-btn .efmt-sub{font-size:10px;opacity:0.7}
+.export-stmt-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto}
+.export-stmt-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all 0.15s;background:var(--surface2)}
+.export-stmt-row:hover{border-color:var(--border-light)}
+.export-stmt-row.selected{border-color:var(--green);background:rgba(61,214,140,0.08)}
+.export-stmt-row input[type=checkbox]{display:flex;width:14px;height:14px;cursor:pointer;accent-color:var(--green)}
+.export-stmt-info{flex:1}
+.export-stmt-info .esi-title{font-size:12px;font-weight:600}
+.export-stmt-info .esi-meta{font-size:10px;color:var(--text-muted);margin-top:1px}
+.export-acct-header{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:8px 0 4px;display:flex;justify-content:space-between}
+.export-progress{display:none;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;text-align:center;color:var(--text-muted)}
+.export-progress.show{display:block}
+
+input[type="file"]{display:none}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">💳</div>
+    Expense Matcher
+  </div>
+  <div class="header-right">
+    <div class="header-stat"><b id="hTotal">0</b> txns</div>
+    <div class="header-stat"><b id="hDone">0</b> done</div>
+    <div class="header-stat"><b id="hAmt">$0</b> total</div>
+    <div class="header-stat" id="hLib"><b>0/0</b> receipts</div>
+    <button class="btn-batch-receipt" onclick="openBatchModal()">📬 Batch Match Receipts</button>
+    <button class="btn-batch-receipt" onclick="openExportModal()" style="border-color:var(--green);color:var(--green)">⬇ Export Statement</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <!-- Account tabs -->
+    <div class="account-tabs">
+      <button class="acct-tab" id="tab-1049" onclick="switchAcct('1049')">
+        Amex ···1049<span class="tab-sub" id="sub-1049">0 statements</span>
+      </button>
+      <button class="acct-tab" id="tab-1011" onclick="switchAcct('1011')">
+        Amex ···1011<span class="tab-sub" id="sub-1011">0 statements</span>
+      </button>
+      <button class="acct-tab" id="tab-1003" onclick="switchAcct('1003')">
+        Amex ···1003<span class="tab-sub" id="sub-1003">0 statements</span>
+      </button>
+    </div>
+
+    <!-- Month bar -->
+    <div class="month-bar" id="monthBar">
+      <button class="month-add" onclick="triggerStmtUpload()" title="Upload statement">＋</button>
+    </div>
+
+    <!-- Upload zone -->
+    <div class="upload-zone c1049" id="uploadZone"
+      onclick="triggerStmtUpload()"
+      ondragover="handleDragOver(event,'uploadZone')"
+      ondragleave="handleDragLeave('uploadZone')"
+      ondrop="handleDrop(event,'statement')">
+      <div class="upload-icon">📄</div>
+      <p><span class="ustrong c1049" id="ustrong">Upload statement</span> for this card</p>
+      <p class="usub">CSV · each file = one month · multiple files OK</p>
+    </div>
+
+    <!-- Statement complete banner -->
+    <div class="stmt-complete-banner" id="completeBanner">
+      <span>🎉</span><span id="completeBannerText">All transactions categorized!</span>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-bar" id="progressBar" style="display:none">
+      <div class="progress-fill pf-1049" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel" style="display:none">
+      <span id="plLeft"></span><span id="plRight"></span>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar" id="filterBar" style="display:none">
+      <button class="fp fa-1049" id="fpAll" onclick="setFilter('all',this)">All</button>
+      <button class="fp" id="fpUn" onclick="setFilter('uncategorized',this)">Uncategorized</button>
+      <button class="fp" id="fpSEG" onclick="setFilter('SEG',this)">SEG</button>
+      <button class="fp" id="fpPer" onclick="setFilter('Jason Personal',this)">Personal</button>
+      <button class="fp" id="fpEmp" onclick="setFilter('Employee Reimburse',this)">Reimburse</button>
+      <button class="fp" id="fpReb" onclick="setFilter('Rebill',this)">Rebill</button>
+      <button class="fp" id="fpRef" onclick="setFilter('Refund',this)">Refund</button>
+    </div>
+
+    <!-- Transaction list -->
+    <div class="txn-scroll" id="txnList"></div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🧾</div>
+      <p>Select a transaction to categorize</p>
+    </div>
+
+    <div class="detail-panel" id="detailPanel">
+
+      <!-- Transaction info -->
+      <div class="dcard">
+        <div class="card-chip chip-1049" id="cardChip">💳 Amex ···1049</div>
+        <div class="merchant-lg" id="dMerchant">—</div>
+        <div class="info-grid three">
+          <div class="ifield"><label>Date</label><p id="dDate">—</p></div>
+          <div class="ifield"><label>Amount</label><p class="mono" id="dAmount">—</p></div>
+          <div class="ifield"><label>Statement</label><p id="dStmt" style="font-size:11px">—</p></div>
+        </div>
+        <div class="info-grid" style="margin-top:10px">
+          <div class="ifield"><label>Category</label><p id="dCategory">—</p></div>
+          <div class="ifield"><label>Description</label><p id="dDesc" style="font-size:11px;color:var(--text-muted)">—</p></div>
+        </div>
+      </div>
+
+      <!-- Expense type -->
+      <div class="dcard">
+        <div class="dcard-title">Expense Type</div>
+        <div class="type-grid">
+          <button class="tbtn" data-type="SEG" onclick="selectType('SEG',this)">SEG</button>
+          <button class="tbtn" data-type="Jason Personal" onclick="selectType('Jason Personal',this)">Jason Personal</button>
+          <button class="tbtn" data-type="Employee Reimburse" onclick="selectType('Employee Reimburse',this)">Employee Reimburse</button>
+          <button class="tbtn" data-type="Rebill" onclick="selectType('Rebill',this)">Rebill</button>
+          <button class="tbtn" data-type="Refund" onclick="selectType('Refund',this)">Refund</button>
+        </div>
+        <div class="rebill-wrap" id="rebillWrap">
+          <label>Rebill to</label>
+          <div class="rebill-grid">
+            <button class="rbtn" onclick="selectRebill('Billie',this)">Billie</button>
+            <button class="rbtn" onclick="selectRebill('Finneas',this)">Finneas</button>
+            <button class="rbtn" onclick="selectRebill('Little Big Town',this)">Little Big Town</button>
+            <button class="rbtn" onclick="selectRebill('Kelsea',this)">Kelsea</button>
+            <button class="rbtn" onclick="selectRebill('Kacey',this)">Kacey</button>
+            <button class="rbtn" onclick="selectRebill('Sandbox Studios',this)">Sandbox Studios</button>
+            <button class="rbtn" onclick="selectRebill('Showcase Ventures',this)">Showcase Ventures</button>
+            <button class="rbtn" onclick="selectRebill('Other',this)">Other</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="dcard">
+        <div class="dcard-title">Notes</div>
+        <textarea id="notesField" placeholder="Add a note about this expense…" oninput="updateNote()"></textarea>
+      </div>
+
+      <!-- Receipts -->
+      <div class="dcard">
+        <div class="dcard-title">Receipts</div>
+        <div class="receipt-drop" id="receiptDrop"
+          onclick="triggerReceiptUpload()"
+          ondragover="handleDragOver(event,'receiptDrop')"
+          ondragleave="handleDragLeave('receiptDrop')"
+          ondrop="handleDrop(event,'receipt')">
+          <p>📎 Attach receipts</p>
+          <div class="rhint">JPG · PNG · PDF — click or drop</div>
+        </div>
+        <div class="receipt-gallery" id="receiptGallery"></div>
+      </div>
+    </div>
+
+    <div class="save-row" id="saveRow" style="display:none">
+      <button class="btn-clear" onclick="clearCurrent()">Clear</button>
+      <button class="btn-save bs-1049" id="saveBtn" onclick="saveTxn()">Save Transaction</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal" style="width:520px">
+    <div class="modal-header">
+      <span class="modal-title">⬇ Export Statement</span>
+      <button class="modal-close" onclick="closeExportModal()">×</button>
+    </div>
+    <div class="modal-body" style="padding:16px">
+
+      <!-- Format picker -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:8px">Export Format</div>
+      <div class="export-format-grid">
+        <button class="efmt-btn selected-xlsx" id="efmt-xlsx" onclick="selectExportFmt('xlsx')">
+          <span class="efmt-icon">📊</span>
+          <span class="efmt-label">Excel (.xlsx)</span>
+          <span class="efmt-sub">One sheet per statement · receipts embedded</span>
+        </button>
+        <button class="efmt-btn" id="efmt-pdf" onclick="selectExportFmt('pdf')">
+          <span class="efmt-icon">📄</span>
+          <span class="efmt-label">PDF</span>
+          <span class="efmt-sub">Formatted report · receipt images inline</span>
+        </button>
+      </div>
+
+      <!-- Statement picker -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:8px;display:flex;justify-content:space-between">
+        <span>Select Statements</span>
+        <button onclick="toggleAllExport()" style="background:none;border:none;color:var(--accent-light);font-size:10px;cursor:pointer;font-family:inherit;font-weight:600">Select All</button>
+      </div>
+      <div class="export-stmt-list" id="exportStmtList"></div>
+
+      <div class="export-progress" id="exportProgress">Generating export…</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-clear" onclick="closeExportModal()">Cancel</button>
+      <button class="btn-save bs-1011" onclick="runExport()">Export</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATCH RECEIPT MODAL -->
+<div class="modal-overlay" id="batchModal">
+  <div class="modal" style="width:680px">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="modal-title">📬 Batch Match Receipts</span>
+        <span id="scanProgress" style="font-size:11px;color:var(--text-muted);display:none"></span>
+      </div>
+      <button class="modal-close" onclick="closeBatchModal()">×</button>
+    </div>
+    <div class="modal-body" style="padding:16px">
+
+      <!-- Drop zone (shown until files dropped) -->
+      <div id="batchDropWrap">
+        <div class="email-hint" style="margin-bottom:12px">
+          <strong>AI reads every receipt</strong>
+          Drop images or PDFs — the app reads each file to extract merchant, amount, and date, then matches to your statements across all cards. Works on forwarded email receipts, screenshots, and scanned PDFs.
+        </div>
+        <div class="batch-drop" id="batchDrop"
+          onclick="triggerBatchUpload()"
+          ondragover="handleDragOver(event,'batchDrop')"
+          ondragleave="handleDragLeave('batchDrop')"
+          ondrop="handleDrop(event,'batch')">
+          <div class="bd-icon">📁</div>
+          <p>Drop all receipts here or click to select</p>
+          <div class="bdsub">JPG · PNG · PDF · multiple files at once</div>
+        </div>
+      </div>
+
+      <!-- Scanning state -->
+      <div id="scanningWrap" style="display:none">
+        <div id="scanGrid" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+
+      <!-- Match results grouped by statement -->
+      <div id="matchResults"></div>
+      <div id="libSection" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:8px">Receipt Library — saved across sessions</div>
+        <div id="libraryPanel"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div id="matchSummary" style="font-size:12px;color:var(--text-muted);flex:1;align-self:center"></div>
+      <button class="btn-clear" onclick="closeBatchModal()">Cancel</button>
+      <button class="btn-save bs-1049" id="applyMatchBtn" style="display:none" onclick="applyMatches()">Apply All Matches</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<input type="file" id="stmtInput" accept=".csv,.txt" multiple onchange="handleStmtFiles(event)">
+<input type="file" id="receiptInput" accept="image/*,.pdf" multiple onchange="handleReceiptFiles(event)">
+<input type="file" id="batchInput" accept="image/*,.pdf" multiple onchange="handleBatchFiles(event)">
+
+<script>
+// ===================================================
+// STATE
+// ===================================================
+const ACCTS = ['1049','1011','1003'];
+const statements = {'1049':{},'1011':{},'1003':{}};
+const txnData = {};
+let activeAcct = '1049', activeStmtId = null, activeFilter = 'all';
+let selectedTxnId = null, pendingMatches = [];
+
+// ===================================================
+// INDEXEDDB — receipt library + txnData persistence
+// ===================================================
+let receiptLibrary = [], db = null;
+
+function initDB() {
+  return new Promise(res => {
+    try {
+      const req = indexedDB.open('ExpenseMatcherV4', 1);
+      req.onupgradeneeded = e => {
+        const d = e.target.result;
+        ['receipts','txnData'].forEach(name => { if(!d.objectStoreNames.contains(name)) d.createObjectStore(name,{keyPath:'id'}); });
+      };
+      req.onsuccess = e => { db = e.target.result; res(); };
+      req.onerror   = ()  => { console.warn('IDB unavailable'); res(); };
+    } catch(e) { res(); }
+  });
+}
+const dbRW = (store, fn) => new Promise(res => {
+  if (!db) return res();
+  const tx = db.transaction(store, 'readwrite');
+  fn(tx.objectStore(store));
+  tx.oncomplete = res; tx.onerror = res;
+});
+const dbRO = (store, fn) => new Promise(res => {
+  if (!db) return res(null);
+  const tx = db.transaction(store, 'readonly');
+  const req = fn(tx.objectStore(store));
+  req.onsuccess = () => res(req.result);
+  req.onerror = () => res(null);
+});
+
+async function loadLibrary()   { const r = await dbRO('receipts', s => s.getAll()); receiptLibrary = r || []; }
+async function saveReceipt(r)  { receiptLibrary.push(r); await dbRW('receipts', s => s.put(r)); }
+async function updateReceipt(r){ const i=receiptLibrary.findIndex(x=>x.id===r.id); if(i>=0)receiptLibrary[i]=r; else receiptLibrary.push(r); await dbRW('receipts', s => s.put(r)); }
+async function deleteReceipt(id){ receiptLibrary=receiptLibrary.filter(r=>r.id!==id); await dbRW('receipts', s => s.delete(id)); }
+async function saveTxnDB() {
+  // Strip dataUrls before saving — images live in the receipts store
+  const slim = {};
+  Object.entries(txnData).forEach(([k,v]) => {
+    slim[k] = {...v};
+    if (slim[k].receipts) {
+      slim[k].receipts = slim[k].receipts.map(r => {
+        const {dataUrl, ...rest} = r;
+        return rest;
+      });
+    }
+  });
+  await dbRW('txnData', s => s.put({id:'main', data:slim}));
+}
+async function loadTxnDB() {
+  const r = await dbRO('txnData', s => s.get('main'));
+  if (r && r.data) Object.assign(txnData, r.data);
+  // Rehydrate dataUrls from receipt library (library must be loaded first)
+  rehydrateTxnReceipts();
+}
+
+function rehydrateTxnReceipts() {
+  Object.values(txnData).forEach(v => {
+    if (!v.receipts) return;
+    v.receipts.forEach(rec => {
+      if (rec.receiptLibId) {
+        const lib = receiptLibrary.find(l => l.id === rec.receiptLibId);
+        if (lib && lib.dataUrl) rec.dataUrl = lib.dataUrl;
+      }
+    });
+  });
+}
+
+// ===================================================
+// AUTO-MATCH: library → transactions
+// ===================================================
+function scoreMatch(extracted, txn) {
+  let s=0;
+  const {merchant:em, amount:ea, date:ed} = extracted||{};
+  if (ea!=null) { const d=Math.abs(txn.amount-ea); if(d<0.01)s+=0.55; else if(d<1.0)s+=0.2; }
+  if (em) {
+    const e=em.toLowerCase().replace(/[^a-z0-9\s]/g,'');
+    const t=txn.merchant.toLowerCase().replace(/[^a-z0-9\s]/g,'');
+    let ov=0;
+    e.split(/\s+/).filter(w=>w.length>2).forEach(w=>{if(t.includes(w))ov++;});
+    t.split(/\s+/).filter(w=>w.length>2).forEach(w=>{if(e.includes(w))ov++;});
+    if(ov>0)s+=Math.min(0.4,ov*0.15);
+    const ml=Math.min(e.length,t.length,6);
+    if(ml>=3&&e.slice(0,ml)===t.slice(0,ml))s+=0.1;
+  }
+  if (ed&&txn.date) { try{const a=new Date(ed),b=new Date(txn.date);if(!isNaN(a)&&!isNaN(b)&&a.getMonth()===b.getMonth()&&a.getFullYear()===b.getFullYear())s+=0.05;}catch(e){} }
+  return s;
+}
+
+function tryAttachReceiptToTxn(receipt, txn) {
+  // Already matched?
+  if ((receipt.matchedTxnIds||[]).includes(txn.id)) return false;
+  if ((txnData[txn.id]?.receipts||[]).some(r=>r.receiptLibId===receipt.id)) return false;
+  const score = scoreMatch(receipt.extracted, txn);
+  if (score < 0.45) return false;
+  if (!txnData[txn.id]) txnData[txn.id]={};
+  if (!txnData[txn.id].receipts) txnData[txn.id].receipts=[];
+  txnData[txn.id].receipts.push({name:receipt.name,dataUrl:receipt.dataUrl,type:receipt.type,autoMatched:true,receiptLibId:receipt.id,score});
+  if (!receipt.matchedTxnIds) receipt.matchedTxnIds=[];
+  receipt.matchedTxnIds.push(txn.id);
+  updateReceipt(receipt);
+  return true;
+}
+
+function autoMatchLibraryToStmt(stmt) {
+  if (!receiptLibrary.length) return 0;
+  let n=0;
+  receiptLibrary.forEach(r => {
+    if (!r.extracted && !r.name) return;
+    let best=null, bestScore=0;
+    stmt.transactions.forEach(t => {
+      if ((r.matchedTxnIds||[]).includes(t.id)) return;
+      if ((txnData[t.id]?.receipts||[]).some(x=>x.receiptLibId===r.id)) return;
+      const s=scoreMatch(r.extracted, t);
+      if (s > bestScore) { bestScore=s; best=t; }
+    });
+    if (best && bestScore >= 0.3) {
+      if (!txnData[best.id]) txnData[best.id]={};
+      if (!txnData[best.id].receipts) txnData[best.id].receipts=[];
+      txnData[best.id].receipts.push({name:r.name,dataUrl:r.dataUrl,type:r.type,autoMatched:true,receiptLibId:r.id,score:bestScore});
+      if (!r.matchedTxnIds) r.matchedTxnIds=[];
+      r.matchedTxnIds.push(best.id);
+      updateReceipt(r);
+      n++;
+    }
+  });
+  if (n>0) { saveTxnDB(); renderTxnList(); if(selectedTxnId) renderReceiptGallery(selectedTxnId); showToast(`Auto-matched ${n} receipt${n===1?'':'s'} ✓`); }
+  return n;
+}
+
+function autoMatchAll() {
+  let n=0;
+  const allTxns=getAllTxns();
+  receiptLibrary.forEach(r => {
+    if (!r.extracted && !r.name) return;
+    // Find best-scoring transaction for this receipt
+    let best=null, bestScore=0;
+    allTxns.forEach(t => {
+      if ((r.matchedTxnIds||[]).includes(t.id)) return; // already matched
+      if ((txnData[t.id]?.receipts||[]).some(x=>x.receiptLibId===r.id)) return; // already attached
+      const s = scoreMatch(r.extracted, t);
+      if (s > bestScore) { bestScore=s; best=t; }
+    });
+    if (best && bestScore >= 0.3) {
+      if (!txnData[best.id]) txnData[best.id]={};
+      if (!txnData[best.id].receipts) txnData[best.id].receipts=[];
+      txnData[best.id].receipts.push({name:r.name,dataUrl:r.dataUrl,type:r.type,autoMatched:true,receiptLibId:r.id,score:bestScore});
+      if (!r.matchedTxnIds) r.matchedTxnIds=[];
+      r.matchedTxnIds.push(best.id);
+      updateReceipt(r);
+      n++;
+    }
+  });
+  if (n>0) { saveTxnDB(); renderTxnList(); if(selectedTxnId) renderReceiptGallery(selectedTxnId); }
+  return n;
+}
+
+// ===================================================
+// ACCOUNT / MONTH
+// ===================================================
+function switchAcct(id) {
+  activeAcct=id; selectedTxnId=null;
+  ACCTS.forEach(a => { const t=document.getElementById('tab-'+a); t.className='acct-tab'; if(a===id)t.classList.add('active-'+id); });
+  document.getElementById('uploadZone').className='upload-zone c'+id;
+  document.getElementById('ustrong').className='ustrong c'+id;
+  document.getElementById('progressFill').className='progress-fill pf-'+id;
+  document.getElementById('saveBtn').className='btn-save bs-'+id;
+  activeFilter='all';
+  document.querySelectorAll('.fp').forEach(p=>p.classList.remove('fa-1049','fa-1011','fa-1003'));
+  document.getElementById('fpAll').classList.add('fa-'+id);
+  const stmts=Object.values(statements[id]);
+  activeStmtId = stmts.length>0 ? stmts.sort((a,b)=>a.sortKey-b.sortKey)[0].id : null;
+  hideDetailPanel(); renderMonthBar(); renderTxnList(); updateStats();
+}
+
+function renderMonthBar() {
+  const bar=document.getElementById('monthBar');
+  bar.innerHTML='';
+  const stmts=getSortedStmts();
+  stmts.forEach(s=>{
+    const total=s.transactions.length;
+    const done=s.transactions.filter(t=>txnData[t.id]?.expenseType).length;
+    const complete=done===total&&total>0, partial=done>0&&!complete;
+    const btn=document.createElement('button');
+    btn.className='month-tab'+(s.id===activeStmtId?' active':'');
+    if(s.id===activeStmtId&&complete) btn.classList.add('done-'+activeAcct);
+    const dotCls=complete?'mo-dot-complete-'+activeAcct:partial?'mo-dot-partial':'';
+    btn.innerHTML=s.label+(dotCls?`<span class="mo-dot ${dotCls}"></span>`:'');
+    btn.onclick=()=>{ activeStmtId=s.id; activeFilter='all'; document.querySelectorAll('.fp').forEach(p=>p.classList.remove('fa-1049','fa-1011','fa-1003')); document.getElementById('fpAll').classList.add('fa-'+activeAcct); renderMonthBar(); renderTxnList(); updateStats(); };
+    bar.appendChild(btn);
+  });
+  const ab=document.createElement('button');
+  ab.className='month-add'; ab.textContent='＋'; ab.title='Upload statement'; ab.onclick=triggerStmtUpload;
+  bar.appendChild(ab);
+  const has=stmts.length>0;
+  ['uploadZone','filterBar','progressBar','progressLabel'].forEach((id,i)=>{ document.getElementById(id).style.display=i===0?(has?'none':'block'):(has?i===1?'flex':'block':'none'); });
+  document.getElementById('filterBar').style.display=has?'flex':'none';
+  document.getElementById('progressBar').style.display=has?'block':'none';
+  document.getElementById('progressLabel').style.display=has?'flex':'none';
+  document.getElementById('uploadZone').style.display=has?'none':'block';
+  updateTabSubs();
+}
+
+function getSortedStmts(a){ return Object.values(statements[a||activeAcct]).sort((a,b)=>a.sortKey-b.sortKey); }
+function updateTabSubs() { ACCTS.forEach(a=>{ const c=Object.keys(statements[a]).length; document.getElementById('sub-'+a).textContent=c+' statement'+(c===1?'':'s'); }); }
+
+// ===================================================
+// CSV UPLOAD + PARSE
+// ===================================================
+function triggerStmtUpload() { document.getElementById('stmtInput').click(); }
+function handleStmtFiles(e) { Array.from(e.target.files).forEach(f=>{ const r=new FileReader(); r.onload=ev=>parseCSV(ev.target.result,f.name); r.readAsText(f); }); e.target.value=''; }
+
+function parseCSV(text, filename) {
+  const lines=text.trim().split('\n').filter(l=>l.trim());
+  if(lines.length<2){showToast('No data in '+filename);return;}
+  const headers=lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/"/g,''));
+  const txns=[];
+  for(let i=1;i<lines.length;i++){
+    const cols=splitCSV(lines[i]); const row={};
+    headers.forEach((h,idx)=>row[h]=(cols[idx]||'').trim().replace(/"/g,''));
+    const merchant=row['description']||row['merchant']||row['name']||row['payee']||row['transaction description']||cols[1]||'Unknown';
+    const date=row['date']||row['transaction date']||row['posted date']||cols[0]||'';
+    const amtRaw=row['amount']||row['debit']||row['charge']||cols[2]||'0';
+    const category=row['category']||row['type']||'';
+    const desc=row['extended details']||row['memo']||row['reference']||row['original description']||'';
+    const amount=parseFloat(amtRaw.replace(/[$,()]/g,''))||0;
+    if(Math.abs(amount)===0&&merchant==='Unknown') continue;
+    txns.push({id:'txn_'+activeAcct+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),merchant:merchant.substring(0,70),date,amount:Math.abs(amount),category,desc:desc!==merchant?desc.substring(0,120):'',account:activeAcct});
+  }
+  if(!txns.length){showToast('Could not parse: '+filename);return;}
+  const {label,sortKey}=inferMonth(filename,txns);
+  const existing=Object.values(statements[activeAcct]).find(s=>s.label===label);
+  if(existing){ existing.transactions.push(...txns); renderMonthBar(); renderTxnList(); autoMatchLibraryToStmt(existing); updateStats(); showToast(`Added ${txns.length} txns to ${label}`); return; }
+  const sid='stmt_'+activeAcct+'_'+Date.now();
+  const stmt={id:sid,label,sortKey,transactions:txns};
+  statements[activeAcct][sid]=stmt;
+  if(!activeStmtId) activeStmtId=sid;
+  renderMonthBar(); renderTxnList();
+  autoMatchLibraryToStmt(stmt);  // ← match saved receipts immediately
+  updateStats();
+  showToast(`Loaded ${txns.length} txns · ${label}`);
+}
+
+function inferMonth(fn, txns) {
+  const mns=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const f=fn.toLowerCase(); let mo=-1,yr=-1; let m;
+  if((m=f.match(/(\d{4})[-_](\d{1,2})/))){yr=+m[1];mo=+m[2]-1;}
+  else if((m=f.match(/(\d{1,2})[-_](\d{4})/))){mo=+m[1]-1;yr=+m[2];}
+  if(mo<0) mns.forEach((n,i)=>{if(f.includes(n))mo=i;});
+  if(yr<0&&(m=f.match(/20(\d{2})/))) yr=+('20'+m[1]);
+  if((mo<0||yr<0)&&txns.length){const d=new Date(txns[0].date);if(!isNaN(d)){if(mo<0)mo=d.getMonth();if(yr<0)yr=d.getFullYear();}}
+  if(mo<0)mo=new Date().getMonth(); if(yr<0)yr=new Date().getFullYear();
+  const ns=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return {label:ns[mo]+' '+yr, sortKey:yr*100+mo};
+}
+function splitCSV(line){const r=[];let cur='',inQ=false;for(const c of line){if(c==='"'){inQ=!inQ;}else if(c===','&&!inQ){r.push(cur);cur='';}else cur+=c;}r.push(cur);return r;}
+
+// ===================================================
+// RENDER TRANSACTIONS
+// ===================================================
+function renderTxnList() {
+  const list=document.getElementById('txnList');
+  if(!activeStmtId||!statements[activeAcct][activeStmtId]){list.innerHTML='';updateCompleteBanner([]);return;}
+  let txns=statements[activeAcct][activeStmtId].transactions;
+  if(activeFilter==='uncategorized') txns=txns.filter(t=>!txnData[t.id]?.expenseType);
+  else if(activeFilter!=='all') txns=txns.filter(t=>txnData[t.id]?.expenseType===activeFilter);
+  list.innerHTML='';
+  if(!txns.length){list.innerHTML='<div class="empty-list">No transactions match this filter</div>';updateCompleteBanner(statements[activeAcct][activeStmtId].transactions);return;}
+  txns.forEach(txn=>{
+    const data=txnData[txn.id]||{};
+    const done=!!data.expenseType, recCount=(data.receipts||[]).length;
+    const item=document.createElement('div');
+    item.className='txn-item'+(done?' done':'')+(recCount?' has-receipt':'')+(txn.id===selectedTxnId?' sel-'+activeAcct:'');
+    item.onclick=()=>selectTxn(txn.id);
+    let tag='';
+    if(data.expenseType){const tc={'SEG':'ttag-seg','Jason Personal':'ttag-personal','Employee Reimburse':'ttag-employee','Rebill':'ttag-rebill','Refund':'ttag-refund'}[data.expenseType]||'';const lbl=data.expenseType==='Rebill'&&data.rebillTarget?`Rebill→${data.rebillTarget}`:data.expenseType;tag+=`<span class="ttag ${tc}">${lbl}</span>`;}
+    if(recCount>0) tag+=`<span class="receipt-matched">📎 ${recCount}</span>`;
+    item.innerHTML=`<div class="txn-row1"><div class="txn-merchant">${txn.merchant}</div><div class="txn-amt">$${txn.amount.toFixed(2)}</div></div><div class="txn-row2"><span>${txn.date||'—'}</span>${txn.category?`<span>· ${txn.category}</span>`:''}${txn.desc&&txn.desc!==txn.merchant?`<span>· ${txn.desc.substring(0,40)}</span>`:''}</div>${tag?`<div class="txn-row3">${tag}</div>`:''}`;
+    list.appendChild(item);
+  });
+  updateCompleteBanner(statements[activeAcct][activeStmtId].transactions);
+  updateProgress();
+}
+
+function updateCompleteBanner(txns){
+  const b=document.getElementById('completeBanner');
+  if(!txns.length){b.classList.remove('show');return;}
+  const done=txns.filter(t=>txnData[t.id]?.expenseType).length;
+  const c=done===txns.length;
+  b.className='stmt-complete-banner'+(c?' show banner-'+activeAcct:'');
+  if(c) document.getElementById('completeBannerText').textContent=`All ${txns.length} transactions categorized!`;
+}
+function updateProgress(){
+  if(!activeStmtId||!statements[activeAcct][activeStmtId]) return;
+  const txns=statements[activeAcct][activeStmtId].transactions;
+  const done=txns.filter(t=>txnData[t.id]?.expenseType).length, total=txns.length;
+  document.getElementById('progressFill').style.width=(total>0?done/total*100:0)+'%';
+  document.getElementById('plLeft').textContent=`${done} of ${total} done`;
+  const amt=txns.filter(t=>txnData[t.id]?.expenseType).reduce((s,t)=>s+t.amount,0);
+  document.getElementById('plRight').textContent='$'+amt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' categorized';
+}
+
+// ===================================================
+// SELECT TRANSACTION
+// ===================================================
+function selectTxn(id){
+  selectedTxnId=id;
+  const stmt=statements[activeAcct][activeStmtId];
+  const txn=stmt?.transactions.find(t=>t.id===id);
+  if(!txn) return;
+  renderTxnList();
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('detailPanel').classList.add('visible');
+  document.getElementById('saveRow').style.display='flex';
+  const chip=document.getElementById('cardChip');
+  chip.className='card-chip chip-'+activeAcct; chip.textContent=`💳 Amex ···${activeAcct}`;
+  document.getElementById('dMerchant').textContent=txn.merchant;
+  document.getElementById('dDate').textContent=txn.date||'—';
+  document.getElementById('dAmount').textContent='$'+txn.amount.toFixed(2);
+  document.getElementById('dStmt').textContent=stmt.label;
+  document.getElementById('dCategory').textContent=txn.category||'—';
+  document.getElementById('dDesc').textContent=txn.desc||txn.merchant;
+  const data=txnData[id]||{};
+  document.querySelectorAll('.tbtn').forEach(b=>b.className='tbtn');
+  document.querySelectorAll('.rbtn').forEach(b=>b.className='rbtn');
+  document.getElementById('rebillWrap').classList.remove('show');
+  if(data.expenseType){
+    const btn=document.querySelector(`.tbtn[data-type="${data.expenseType}"]`);
+    if(btn){btn.className='tbtn '+({'SEG':'ta-seg','Jason Personal':'ta-personal','Employee Reimburse':'ta-employee','Rebill':'ta-rebill','Refund':'ta-refund'}[data.expenseType]||'');}
+    if(data.expenseType==='Rebill'){document.getElementById('rebillWrap').classList.add('show');if(data.rebillTarget){const rb=[...document.querySelectorAll('.rbtn')].find(b=>b.textContent===data.rebillTarget);if(rb)rb.className='rbtn active';}}
+  }
+  document.getElementById('notesField').value=data.notes||'';
+  renderReceiptGallery(id);
+}
+function hideDetailPanel(){document.getElementById('emptyState').style.display='flex';document.getElementById('detailPanel').classList.remove('visible');document.getElementById('saveRow').style.display='none';selectedTxnId=null;}
+
+// ===================================================
+// EXPENSE TYPE + NOTES
+// ===================================================
+function selectType(type,btn){
+  document.querySelectorAll('.tbtn').forEach(b=>b.className='tbtn');
+  btn.className='tbtn '+({'SEG':'ta-seg','Jason Personal':'ta-personal','Employee Reimburse':'ta-employee','Rebill':'ta-rebill','Refund':'ta-refund'}[type]||'');
+  if(!txnData[selectedTxnId]) txnData[selectedTxnId]={};
+  txnData[selectedTxnId].expenseType=type;
+  const rw=document.getElementById('rebillWrap');
+  if(type==='Rebill') rw.classList.add('show');
+  else{rw.classList.remove('show');if(txnData[selectedTxnId])txnData[selectedTxnId].rebillTarget=null;document.querySelectorAll('.rbtn').forEach(b=>b.className='rbtn');}
+}
+function selectRebill(target,btn){document.querySelectorAll('.rbtn').forEach(b=>b.className='rbtn');btn.className='rbtn active';if(!txnData[selectedTxnId])txnData[selectedTxnId]={};txnData[selectedTxnId].rebillTarget=target;}
+function updateNote(){if(!selectedTxnId)return;if(!txnData[selectedTxnId])txnData[selectedTxnId]={};txnData[selectedTxnId].notes=document.getElementById('notesField').value;}
+
+// ===================================================
+// SINGLE RECEIPT
+// ===================================================
+function triggerReceiptUpload(){document.getElementById('receiptInput').click();}
+function handleReceiptFiles(e){Array.from(e.target.files).forEach(f=>attachSingle(f,selectedTxnId));e.target.value='';}
+async function attachSingle(file,txnId){
+  if(!txnId) return;
+  const dataUrl = await toDataUrl(file);
+  // Save into receipt library so it persists across reloads
+  const recId = 'rec_manual_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  await saveReceipt({id:recId, name:file.name, dataUrl, type:file.type, extracted:null, matchedTxnIds:[txnId]});
+  if(!txnData[txnId]) txnData[txnId]={};
+  if(!txnData[txnId].receipts) txnData[txnId].receipts=[];
+  txnData[txnId].receipts.push({name:file.name, dataUrl, type:file.type, autoMatched:false, receiptLibId:recId});
+  await saveTxnDB();
+  if(txnId===selectedTxnId) renderReceiptGallery(txnId);
+  renderTxnList();
+}
+function renderReceiptGallery(txnId){
+  const g=document.getElementById('receiptGallery'), receipts=txnData[txnId]?.receipts||[];
+  g.innerHTML='';
+  receipts.forEach((r,i)=>{
+    const t=document.createElement('div');
+    t.className='rthumb'+(r.autoMatched?' auto-matched':'');
+    const mediaHtml=r.type==='application/pdf'?'<span style="font-size:28px;line-height:1">📄</span>':'<img src="'+r.dataUrl+'" style="width:100%;height:100%;object-fit:cover;display:block">';
+    const badgeHtml=r.autoMatched?'<div class="match-badge">AUTO</div>':'';
+    t.innerHTML=mediaHtml+badgeHtml+'<div class="rlabel">'+r.name+'</div><button class="rremove" onclick="removeReceipt('+i+',event)">×</button>';
+    t.onclick=()=>window.open(r.dataUrl,'_blank');
+    g.appendChild(t);
+  });
+}
+async function removeReceipt(idx,e){
+  e.stopPropagation();
+  if(!txnData[selectedTxnId]?.receipts) return;
+  const removed = txnData[selectedTxnId].receipts.splice(idx,1)[0];
+  // Remove from library if it was a manual upload (not a batch-matched receipt used elsewhere)
+  if(removed?.receiptLibId){
+    const lib = receiptLibrary.find(r=>r.id===removed.receiptLibId);
+    if(lib){
+      lib.matchedTxnIds = (lib.matchedTxnIds||[]).filter(id=>id!==selectedTxnId);
+      if(lib.matchedTxnIds.length===0) await deleteReceipt(lib.id);
+      else await updateReceipt(lib);
+    }
+  }
+  await saveTxnDB();
+  renderReceiptGallery(selectedTxnId);
+  renderTxnList();
+}
+
+// ===================================================
+// BATCH MODAL
+// ===================================================
+function openBatchModal(){
+  document.getElementById('batchModal').classList.add('show');
+  document.getElementById('batchDropWrap').style.display='block';
+  document.getElementById('scanningWrap').style.display='none';
+  document.getElementById('matchResults').innerHTML='';
+  document.getElementById('applyMatchBtn').style.display='none';
+  document.getElementById('matchSummary').textContent='';
+  document.getElementById('scanProgress').style.display='none';
+  document.getElementById('scanGrid').innerHTML='';
+  pendingMatches=[];
+  renderLibraryPanel();
+}
+function closeBatchModal(){document.getElementById('batchModal').classList.remove('show');}
+function triggerBatchUpload(){document.getElementById('batchInput').click();}
+function handleBatchFiles(e){const files=Array.from(e.target.files);if(files.length)startBatchScan(files);e.target.value='';}
+
+// ---- LIBRARY PANEL ----
+function renderLibraryPanel(){
+  const el=document.getElementById('libraryPanel');
+  if(!el) return;
+  const total=receiptLibrary.length;
+  const matched=receiptLibrary.filter(r=>(r.matchedTxnIds||[]).length>0).length;
+  if(!total){el.innerHTML='<div style="font-size:11px;color:var(--text-dim);padding:4px 0">No receipts saved yet. Upload below to build your library.</div>';return;}
+  el.innerHTML=`
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      <span><b style="color:var(--text)">${total}</b> saved · <b style="color:var(--green)">${matched}</b> matched to transactions</span>
+      <button onclick="rematchAll()" style="background:none;border:1px solid var(--border);color:var(--accent-light);font-size:11px;cursor:pointer;padding:3px 8px;border-radius:20px;font-family:inherit">↺ Re-match all</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:5px">
+      ${receiptLibrary.map(r=>{
+        const mc=(r.matchedTxnIds||[]).length;
+        const border=mc?'rgba(61,214,140,0.4)':'var(--border)';
+        const inner=r.type==='application/pdf'?`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:17px">📄</div>`:`<img src="${r.dataUrl}" style="width:100%;height:100%;object-fit:cover">`;
+        return `<div style="position:relative;aspect-ratio:1;border-radius:5px;overflow:hidden;border:1px solid ${border};background:var(--surface3);cursor:pointer" title="${r.name}" onclick="window.open('${r.dataUrl}','_blank')">
+          ${inner}
+          ${mc?`<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(61,214,140,0.85);font-size:8px;font-weight:700;color:#0a1f12;text-align:center;padding:1px">✓${mc}</div>`:''}
+          <button onclick="delLibRec('${r.id}',event)" style="position:absolute;top:2px;right:2px;width:14px;height:14px;background:rgba(0,0,0,0.7);border:none;border-radius:50%;color:#fff;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+async function delLibRec(id,e){e.stopPropagation();await deleteReceipt(id);renderLibraryPanel();updateStats();}
+async function rematchAll(){const n=autoMatchAll();renderLibraryPanel();updateStats();showToast(n>0?`Re-matched ${n} receipt${n===1?'':'s'} ✓`:'No new matches found');}
+
+// ---- AI SCAN ----
+// Pipeline: read → AI extract → save to IDB → match → attach → show
+async function startBatchScan(files) {
+  // Reset UI
+  document.getElementById('batchDropWrap').style.display = 'none';
+  document.getElementById('scanningWrap').style.display  = 'block';
+  document.getElementById('matchResults').innerHTML      = '';
+  document.getElementById('applyMatchBtn').style.display = 'none';
+  document.getElementById('matchSummary').textContent    = '';
+  document.getElementById('scanGrid').innerHTML          = '';
+  pendingMatches = [];
+
+  const scanProg = document.getElementById('scanProgress');
+  scanProg.style.display = 'inline';
+
+  // ── PHASE 1: render rows + read files + AI extract ──────────────────────
+  files.forEach((file, i) => {
+    const row = document.createElement('div');
+    row.className = 'scan-row scanning';
+    row.id = 'srow-' + i;
+    row.innerHTML =
+      '<div class="scan-spinner" id="spin-' + i + '"></div>' +
+      '<div class="scan-filename" title="' + file.name + '">' + file.name + '</div>' +
+      '<div class="scan-extracted" id="sext-' + i + '">Reading…</div>';
+    document.getElementById('scanGrid').appendChild(row);
+  });
+
+  for (let i = 0; i < files.length; i++) {
+    scanProg.textContent = (i + 1) + ' / ' + files.length;
+    await scanOne(files[i], i);
+  }
+
+  // ── PHASE 2: save each receipt to IDB library ───────────────────────────
+  scanProg.textContent = 'Saving to library…';
+
+  for (let i = 0; i < pendingMatches.length; i++) {
+    const pm = pendingMatches[i];
+    if (!pm || !pm.dataUrl) continue;
+
+    // Check for duplicate by name+type
+    const dup = receiptLibrary.find(r => r.name === pm.name && r.type === pm.type);
+    if (dup) {
+      // Reuse existing id; upgrade extracted if we now have amount
+      pm.id = dup.id;
+      if (pm.extracted && pm.extracted.amount != null && (!dup.extracted || dup.extracted.amount == null)) {
+        dup.extracted = pm.extracted;
+        await updateReceipt(dup);
+      }
+    } else {
+      // New receipt — add to in-memory library and persist
+      const libEntry = {
+        id: pm.id,
+        name: pm.name,
+        dataUrl: pm.dataUrl,
+        type: pm.type,
+        extracted: pm.extracted,
+        matchedTxnIds: []
+      };
+      receiptLibrary.push(libEntry);          // add to in-memory array FIRST
+      await dbRW('receipts', s => s.put(libEntry));  // then persist
+    }
+  }
+
+  // ── PHASE 3: match each receipt to best transaction ──────────────────────
+  scanProg.textContent = 'Matching…';
+
+  const allTxns = getAllTxns();
+  let totalMatched = 0;
+
+  for (const pm of pendingMatches) {
+    if (!pm || !pm.dataUrl) continue;
+
+    // Get the in-memory library entry (guaranteed to exist now)
+    const libRec = receiptLibrary.find(r => r.id === pm.id);
+    if (!libRec) continue;
+
+    // Already attached to a txn from a previous run?
+    let alreadyTxnId = null;
+    for (const t of allTxns) {
+      if ((txnData[t.id]?.receipts || []).some(r => r.receiptLibId === libRec.id)) {
+        alreadyTxnId = t.id;
+        break;
+      }
+    }
+
+    if (alreadyTxnId) {
+      const t = allTxns.find(x => x.id === alreadyTxnId);
+      pm.matchResult = { txn: t, score: 1, alreadyAttached: true };
+      totalMatched++;
+      continue;
+    }
+
+    // Score against every unmatched transaction
+    let bestTxn = null, bestScore = 0;
+    for (const t of allTxns) {
+      if ((libRec.matchedTxnIds || []).includes(t.id)) continue;
+      const s = scoreMatch(libRec.extracted, t);
+      if (s > bestScore) { bestScore = s; bestTxn = t; }
+    }
+
+    if (bestTxn && bestScore >= 0.25) {
+      // ✅ Attach receipt directly to transaction in memory
+      if (!txnData[bestTxn.id]) txnData[bestTxn.id] = {};
+      if (!txnData[bestTxn.id].receipts) txnData[bestTxn.id].receipts = [];
+      txnData[bestTxn.id].receipts.push({
+        name:         libRec.name,
+        dataUrl:      libRec.dataUrl,   // full dataUrl in memory
+        type:         libRec.type,
+        autoMatched:  true,
+        receiptLibId: libRec.id,
+        score:        bestScore
+      });
+      // Update library entry
+      if (!libRec.matchedTxnIds) libRec.matchedTxnIds = [];
+      libRec.matchedTxnIds.push(bestTxn.id);
+      await dbRW('receipts', s => s.put(libRec));
+
+      pm.matchResult = { txn: bestTxn, score: bestScore, alreadyAttached: false };
+      totalMatched++;
+    } else {
+      pm.matchResult = null;
+    }
+  }
+
+  // ── PHASE 4: persist txnData (strips dataUrls, rehydrates from library) ──
+  await saveTxnDB();
+  rehydrateTxnReceipts(); // restore dataUrls in memory after save stripped them
+
+  // ── PHASE 5: render results + refresh UI ─────────────────────────────────
+  scanProg.textContent = 'Done — ' + totalMatched + ' matched';
+  document.getElementById('scanningWrap').style.display = 'none';
+
+  renderBatchResults(allTxns, totalMatched);
+  renderLibraryPanel();
+  renderTxnList();
+  if (selectedTxnId) renderReceiptGallery(selectedTxnId);
+  updateStats();
+}
+
+
+async function scanOne(file, idx) {
+  const row   = document.getElementById('srow-' + idx);
+  const extEl = document.getElementById('sext-' + idx);
+  const spinEl = document.getElementById('spin-' + idx);
+
+  try {
+    const dataUrl = await toDataUrl(file);
+    const isImg = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf';
+
+    // AI extraction (images + PDFs)
+    let extracted = null;
+    if (isImg || isPdf) {
+      extracted = await aiExtract(file, dataUrl);
+    }
+    // Filename fallback
+    if (!extracted || (!extracted.merchant && !extracted.amount)) {
+      const fb = fromFilename(file.name);
+      extracted = extracted ? { ...fb, ...extracted } : fb;
+    }
+
+    pendingMatches[idx] = {
+      id: 'rec_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      file, dataUrl, name: file.name, type: file.type, extracted,
+      matchedTxnIds: [], txnId: null, score: 0
+    };
+
+    // Update row UI
+    spinEl.style.display = 'none';
+    row.classList.remove('scanning');
+    const sd = document.createElement('div');
+    sd.className = 'scan-status';
+
+    if (extracted && (extracted.merchant || extracted.amount)) {
+      row.classList.add('scanned');
+      const parts = [
+        extracted.merchant,
+        extracted.amount != null ? '$' + Number(extracted.amount).toFixed(2) : null,
+        extracted.date
+      ].filter(Boolean);
+      extEl.textContent = parts.join(' · ');
+      extEl.classList.add('found');
+      sd.textContent = '✓';
+    } else {
+      row.classList.add('scan-err');
+      extEl.textContent = 'No data extracted';
+      sd.textContent = '–';
+    }
+    row.insertBefore(sd, row.firstChild);
+
+  } catch (err) {
+    console.error('scanOne error', err);
+    pendingMatches[idx] = {
+      id: 'rec_' + Date.now() + '_' + idx,
+      file, dataUrl: null, name: file.name, type: file.type,
+      extracted: fromFilename(file.name), matchedTxnIds: [], txnId: null, score: 0
+    };
+    row.classList.remove('scanning');
+    row.classList.add('scan-err');
+    extEl.textContent = 'Read error';
+    if (spinEl) spinEl.replaceWith(
+      Object.assign(document.createElement('div'), { className: 'scan-status', textContent: '!' })
+    );
+  }
+}
+
+const toDataUrl = file => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = e => res(e.target.result);
+  r.onerror = rej;
+  r.readAsDataURL(file);
+});
+
+// AI extraction via Anthropic API — reads actual image/PDF content
+async function aiExtract(file, dataUrl) {
+  try {
+    const b64 = dataUrl.split(',')[1];
+    const isImg = file.type.startsWith('image/');
+    const contentBlock = isImg
+      ? { type: 'image',    source: { type: 'base64', media_type: file.type,              data: b64 } }
+      : { type: 'document', source: { type: 'base64', media_type: 'application/pdf',       data: b64 } };
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: [
+            contentBlock,
+            { type: 'text', text:
+              'You are reading a receipt or invoice. Extract the key fields and respond with ONLY a JSON object — no markdown, no explanation:\n' +
+              '{"merchant":"<business name>","amount":<total charged as a number>,"date":"<date as MM/DD/YYYY>","category":"<expense category>"}\n' +
+              'Rules: amount must be a plain number (e.g. 42.50). Use null for any field you cannot find. ' +
+              'For merchant use the business name, not an address. ' +
+              'For amount use the total/grand total charged, not subtotal.'
+            }
+          ]
+        }]
+      })
+    });
+
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const raw  = (data.content || []).map(c => c.text || '').join('').trim();
+    const json = raw.replace(/^```json\s*/,'').replace(/```\s*$/,'').trim();
+    const p    = JSON.parse(json);
+
+    return {
+      merchant: p.merchant  || null,
+      amount:   typeof p.amount === 'number' ? p.amount
+                : (p.amount ? parseFloat(String(p.amount).replace(/[^0-9.]/g, '')) : null),
+      date:     p.date      || null,
+      category: p.category  || null
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+// Filename fallback extractor
+function fromFilename(fn) {
+  const f = fn.toLowerCase().replace(/[_\-\.]/g, ' ');
+  const am = f.match(/(\d+[\.,]\d{2})/);
+  const amount = am ? parseFloat(am[1].replace(',', '.')) : null;
+  const words = f.replace(/\d+[\.,]\d{2}/g, '').replace(/\.(jpg|jpeg|png|pdf)/g, '')
+                  .trim().split(/\s+/).filter(w => w.length > 2);
+  return { merchant: words.length ? words.slice(0, 3).join(' ') : null, amount, date: null, category: null };
+}
+
+// Find best-matching transaction for a receipt
+function bestMatch(libRec, allTxns) {
+  if (!allTxns.length) return null;
+  // Check if already attached somewhere
+  for (const t of allTxns) {
+    if ((txnData[t.id]?.receipts || []).some(r => r.receiptLibId === libRec.id)) {
+      return { txn: t, score: 1, alreadyAttached: true };
+    }
+  }
+  let best = null, bestScore = 0;
+  allTxns.forEach(t => {
+    if ((libRec.matchedTxnIds || []).includes(t.id)) return;
+    const s = scoreMatch(libRec.extracted, t);
+    if (s > bestScore) { bestScore = s; best = t; }
+  });
+  return (best && bestScore >= 0.25) ? { txn: best, score: bestScore, alreadyAttached: false } : null;
+}
+
+function getAllTxns() {
+  const a = [];
+  ACCTS.forEach(ac => Object.values(statements[ac]).forEach(s =>
+    s.transactions.forEach(t => a.push({ ...t, stmtLabel: s.label, stmtId: s.id, acct: ac }))
+  ));
+  return a;
+}
+
+// Render results grouped by statement after scan+match
+function renderBatchResults(allTxns, totalAutoMatched) {
+  const container = document.getElementById('matchResults');
+  container.innerHTML = '';
+
+  const groups   = {}; // stmtKey → { label, acct, rows[] }
+  const unmatched = [];
+
+  pendingMatches.forEach((pm, i) => {
+    if (!pm) return;
+    const res = pm.matchResult;
+    if (res) {
+      const t   = res.txn;
+      const key = t.acct + '_' + t.stmtId;
+      if (!groups[key]) groups[key] = { label: t.stmtLabel, acct: t.acct, rows: [] };
+      groups[key].rows.push({ pm, i, res });
+    } else {
+      unmatched.push({ pm, i });
+    }
+  });
+
+  const total = pendingMatches.filter(Boolean).length;
+
+  // Matched groups
+  Object.values(groups).forEach(g => {
+    const sec = document.createElement('div');
+    sec.className = 'match-group';
+    const col = { '1049': 'var(--c1049)', '1011': 'var(--c1011)', '1003': 'var(--c1003)' }[g.acct] || 'var(--text)';
+    sec.innerHTML =
+      `<div class="match-group-header">` +
+        `<span style="color:${col}">Amex ···${g.acct} — ${g.label}</span>` +
+        `<span>${g.rows.length} matched</span>` +
+      `</div>`;
+    g.rows.forEach(({ pm, i, res }) => buildResultRow(pm, i, res, allTxns, sec));
+    container.appendChild(sec);
+  });
+
+  // Unmatched
+  if (unmatched.length) {
+    const sec = document.createElement('div');
+    sec.className = 'match-group';
+    sec.innerHTML =
+      `<div class="match-group-header">` +
+        `<span style="color:var(--text-muted)">No match found</span>` +
+        `<span>${unmatched.length}</span>` +
+      `</div>`;
+    unmatched.forEach(({ pm, i }) => buildResultRow(pm, i, null, allTxns, sec));
+    container.appendChild(sec);
+  }
+
+  // Summary
+  document.getElementById('matchSummary').textContent =
+    `${totalAutoMatched} auto-matched · ${unmatched.length} unmatched`;
+  document.getElementById('applyMatchBtn').style.display  = unmatched.length ? 'block' : 'none';
+  document.getElementById('applyMatchBtn').textContent    = 'Assign Unmatched';
+  document.getElementById('scanningWrap').style.display   = 'none';
+}
+
+function buildResultRow(pm, i, res, allTxns, container) {
+  const matched = !!res;
+  const alreadyDone = res?.alreadyAttached;
+  const row = document.createElement('div');
+  row.className = 'match-row ' + (matched ? 'matched' : 'unmatched');
+  row.id = 'mrow-' + i;
+
+  // Thumbnail
+  const thumb = pm.dataUrl
+    ? (pm.file.type.startsWith('image/')
+        ? `<div class="match-thumb"><img src="${pm.dataUrl}" style="width:100%;height:100%;object-fit:cover"></div>`
+        : `<div class="match-thumb" style="font-size:20px">📄</div>`)
+    : `<div class="match-thumb">📎</div>`;
+
+  // Extracted fields
+  const ext = pm.extracted || {};
+  const extStr = [
+    ext.merchant,
+    ext.amount != null ? '$' + Number(ext.amount).toFixed(2) : null,
+    ext.date
+  ].filter(Boolean).join(' · ') || 'No data extracted';
+
+  // Match target label
+  const mt = res?.txn;
+  const statusLabel = alreadyDone ? '(already matched)' : '';
+  const mtHtml = mt
+    ? `<div class="mt-name found">${mt.merchant} <small style="opacity:.6">${statusLabel}</small></div>` +
+      `<div class="mt-meta">$${mt.amount.toFixed(2)} · ${mt.date || ''} · ···${mt.acct} ${mt.stmtLabel}</div>`
+    : `<div class="mt-name none">No match found</div><div class="mt-meta">Select below to assign</div>`;
+
+  // Dropdown (grouped by statement) — for manual assignment of unmatched
+  const sg = {};
+  allTxns.forEach(t => {
+    const k = t.acct + '_' + t.stmtId;
+    if (!sg[k]) sg[k] = { label: `···${t.acct} ${t.stmtLabel}`, txns: [] };
+    sg[k].txns.push(t);
+  });
+  let opts = `<option value="">— Assign manually</option>`;
+  Object.values(sg).forEach(s => {
+    opts += `<optgroup label="${s.label}">`;
+    s.txns.forEach(t => {
+      opts += `<option value="${t.id}"${(pm.txnId === t.id || mt?.id === t.id) ? ' selected' : ''}>` +
+        `${t.merchant.substring(0, 28)} · $${t.amount.toFixed(2)} · ${t.date || ''}</option>`;
+    });
+    opts += `</optgroup>`;
+  });
+
+  const conf = res && !alreadyDone ? Math.round(res.score * 100) + '%' : '';
+
+  row.innerHTML =
+    `${thumb}` +
+    `<div class="match-info">` +
+      `<div class="mi-file" title="${pm.name}">${pm.name}</div>` +
+      `<div class="mi-extracted">${extStr}</div>` +
+    `</div>` +
+    `<div class="match-arrow">→</div>` +
+    `<div class="match-txn-info" id="mtinfo-${i}">${mtHtml}</div>` +
+    `<div class="match-conf">${conf}</div>` +
+    `<div class="match-select"><select onchange="manualAssign(${i},this.value)">${opts}</select></div>`;
+
+  container.appendChild(row);
+}
+
+// Manual assignment from dropdown
+async function manualAssign(i, txnId) {
+  const pm = pendingMatches[i];
+  if (!pm || !pm.dataUrl) return;
+
+  const allTxns = getAllTxns();
+  const txn = allTxns.find(t => t.id === txnId);
+
+  // Remove from any previous match
+  const libRec = receiptLibrary.find(r => r.id === pm.id);
+  if (libRec) {
+    (libRec.matchedTxnIds || []).forEach(oldId => {
+      if (txnData[oldId]?.receipts) {
+        txnData[oldId].receipts = txnData[oldId].receipts.filter(r => r.receiptLibId !== pm.id);
+      }
+    });
+    libRec.matchedTxnIds = txnId ? [txnId] : [];
+    await updateReceipt(libRec);
+  }
+
+  // Attach to new txn
+  if (txnId && txn) {
+    if (!txnData[txnId]) txnData[txnId] = {};
+    if (!txnData[txnId].receipts) txnData[txnId].receipts = [];
+    if (!txnData[txnId].receipts.some(r => r.receiptLibId === pm.id)) {
+      txnData[txnId].receipts.push({
+        name: pm.name, dataUrl: pm.dataUrl, type: pm.type,
+        autoMatched: false, receiptLibId: pm.id, score: 1
+      });
+    }
+    pm.matchResult = { txn, score: 1, alreadyAttached: false };
+    pm.txnId = txnId;
+  } else {
+    pm.matchResult = null;
+    pm.txnId = null;
+  }
+
+  await saveTxnDB();
+  rehydrateTxnReceipts();
+  renderTxnList();
+  if (selectedTxnId) renderReceiptGallery(selectedTxnId);
+
+  // Update row UI
+  const row = document.getElementById('mrow-' + i);
+  if (row) row.className = 'match-row ' + (txnId ? 'matched' : 'unmatched');
+  const el = document.getElementById('mtinfo-' + i);
+  if (el && txn) {
+    el.innerHTML =
+      `<div class="mt-name found">${txn.merchant}</div>` +
+      `<div class="mt-meta">$${txn.amount.toFixed(2)} · ${txn.date || ''} · ···${txn.acct} ${txn.stmtLabel}</div>`;
+  }
+
+  // Update summary count
+  const matched = pendingMatches.filter(p => p && p.matchResult).length;
+  const total   = pendingMatches.filter(Boolean).length;
+  document.getElementById('matchSummary').textContent = `${matched} of ${total} matched`;
+
+  showToast(txnId ? 'Assigned ✓' : 'Removed match');
+}
+
+// "Assign Unmatched" button — closes modal
+async function applyMatches() {
+  closeBatchModal();
+  renderTxnList();
+  if (selectedTxnId) renderReceiptGallery(selectedTxnId);
+  updateStats();
+}
+
+
+// ===================================================
+// DRAG & DROP / SAVE / FILTER / STATS / TOAST
+// ===================================================
+function handleDragOver(e,id){e.preventDefault();document.getElementById(id).classList.add('drag-over');}
+function handleDragLeave(id){document.getElementById(id).classList.remove('drag-over');}
+function handleDrop(e,target){
+  e.preventDefault();
+  const ids={statement:'uploadZone',receipt:'receiptDrop',batch:'batchDrop'};
+  document.getElementById(ids[target]||target).classList.remove('drag-over');
+  const files=Array.from(e.dataTransfer.files);
+  if(target==='statement') files.forEach(f=>{const r=new FileReader();r.onload=ev=>parseCSV(ev.target.result,f.name);r.readAsText(f);});
+  else if(target==='receipt') files.forEach(f=>attachSingle(f,selectedTxnId));
+  else if(target==='batch'&&files.length) startBatchScan(files);
+}
+
+function saveTxn(){
+  if(!selectedTxnId) return;
+  const data=txnData[selectedTxnId]||{};
+  if(!data.expenseType){showToast('Select an expense type first');return;}
+  if(data.expenseType==='Rebill'&&!data.rebillTarget){showToast('Select who to rebill');return;}
+  saveTxnDB(); renderTxnList(); updateStats(); showToast('Saved ✓');
+  const txns=statements[activeAcct][activeStmtId]?.transactions||[];
+  const idx=txns.findIndex(t=>t.id===selectedTxnId);
+  const next=txns.slice(idx+1).find(t=>!txnData[t.id]?.expenseType);
+  if(next) setTimeout(()=>selectTxn(next.id),260);
+}
+function clearCurrent(){if(!selectedTxnId)return;delete txnData[selectedTxnId];saveTxnDB();selectTxn(selectedTxnId);renderTxnList();updateStats();}
+function setFilter(filter,btn){activeFilter=filter;document.querySelectorAll('.fp').forEach(p=>p.classList.remove('fa-1049','fa-1011','fa-1003'));btn.classList.add('fa-'+activeAcct);renderTxnList();}
+
+function updateStats(){
+  let total=0,done=0,amt=0;
+  ACCTS.forEach(a=>Object.values(statements[a]).forEach(s=>s.transactions.forEach(t=>{total++;amt+=t.amount;if(txnData[t.id]?.expenseType)done++;})));
+  document.getElementById('hTotal').textContent=total;
+  document.getElementById('hDone').textContent=done;
+  document.getElementById('hAmt').textContent='$'+amt.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const libEl=document.getElementById('hLib');
+  if(libEl){const lm=receiptLibrary.filter(r=>(r.matchedTxnIds||[]).length>0).length;libEl.innerHTML=`<b>${lm}/${receiptLibrary.length}</b> receipts`;}
+  updateProgress(); renderMonthBar();
+}
+
+
+// ===================================================
+// EXPORT — Excel + PDF
+// ===================================================
+let exportFmt = 'xlsx';
+let exportSelected = new Set();
+
+function openExportModal() {
+  exportFmt = 'xlsx';
+  exportSelected = new Set();
+  document.getElementById('exportModal').classList.add('show');
+  document.getElementById('exportProgress').classList.remove('show');
+  selectExportFmt('xlsx');
+  renderExportList();
+}
+function closeExportModal() { document.getElementById('exportModal').classList.remove('show'); }
+
+function selectExportFmt(fmt) {
+  exportFmt = fmt;
+  document.getElementById('efmt-xlsx').className = 'efmt-btn' + (fmt==='xlsx'?' selected-xlsx':'');
+  document.getElementById('efmt-pdf').className  = 'efmt-btn' + (fmt==='pdf'?' selected-pdf':'');
+}
+
+function renderExportList() {
+  const container = document.getElementById('exportStmtList');
+  container.innerHTML = '';
+  const acctColors = {'1049':'var(--c1049)','1011':'var(--c1011)','1003':'var(--c1003)'};
+
+  ACCTS.forEach(a => {
+    const stmts = getSortedStmts(a);
+    if (!stmts.length) return;
+
+    const hdr = document.createElement('div');
+    hdr.className = 'export-acct-header';
+    const done = stmts.reduce((s,st)=>s+st.transactions.filter(t=>txnData[t.id]?.expenseType).length,0);
+    const total = stmts.reduce((s,st)=>s+st.transactions.length,0);
+    hdr.innerHTML = `<span style="color:${acctColors[a]}">Amex ···${a}</span><span>${done}/${total} categorized</span>`;
+    container.appendChild(hdr);
+
+    stmts.forEach(stmt => {
+      const txns = stmt.transactions;
+      const catCount = txns.filter(t => txnData[t.id]?.expenseType).length;
+      const recCount = txns.filter(t => (txnData[t.id]?.receipts||[]).length > 0).length;
+      const amt = txns.reduce((s,t)=>s+t.amount, 0);
+      const complete = catCount === txns.length && txns.length > 0;
+
+      const row = document.createElement('div');
+      row.className = 'export-stmt-row' + (exportSelected.has(stmt.id) ? ' selected' : '');
+      row.id = 'erow-' + stmt.id;
+
+      row.innerHTML = `
+        <input type="checkbox" ${exportSelected.has(stmt.id)?'checked':''} onchange="toggleExportStmt('${stmt.id}', this.checked)">
+        <div class="export-stmt-info">
+          <div class="esi-title">${stmt.label} ${complete ? '✓' : ''}</div>
+          <div class="esi-meta">${catCount}/${txns.length} expenses · ${recCount} receipts · $${amt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+        </div>
+      `;
+      row.onclick = (e) => { if (e.target.type !== 'checkbox') { const cb = row.querySelector('input'); cb.checked = !cb.checked; toggleExportStmt(stmt.id, cb.checked); } };
+      container.appendChild(row);
+    });
+  });
+}
+
+function toggleExportStmt(stmtId, checked) {
+  if (checked) exportSelected.add(stmtId); else exportSelected.delete(stmtId);
+  const row = document.getElementById('erow-' + stmtId);
+  if (row) row.className = 'export-stmt-row' + (checked ? ' selected' : '');
+}
+
+function toggleAllExport() {
+  const allIds = [];
+  ACCTS.forEach(a => getSortedStmts(a).forEach(s => allIds.push(s.id)));
+  const allSelected = allIds.every(id => exportSelected.has(id));
+  if (allSelected) exportSelected.clear();
+  else allIds.forEach(id => exportSelected.add(id));
+  renderExportList();
+}
+
+async function runExport() {
+  if (!exportSelected.size) { showToast('Select at least one statement'); return; }
+  const prog = document.getElementById('exportProgress');
+  prog.classList.add('show');
+  prog.textContent = 'Generating export…';
+
+  // Collect selected statements with account info
+  const selected = [];
+  ACCTS.forEach(a => getSortedStmts(a).forEach(s => { if (exportSelected.has(s.id)) selected.push({...s, acct: a}); }));
+
+  try {
+    if (exportFmt === 'xlsx') await exportXLSX(selected);
+    else await exportPDF(selected);
+  } catch(e) {
+    console.error(e);
+    showToast('Export failed: ' + e.message);
+  }
+
+  prog.classList.remove('show');
+  closeExportModal();
+}
+
+// ---- EXCEL EXPORT ----
+async function exportXLSX(selectedStmts) {
+  const XLSX = window.XLSX;
+  const wb = XLSX.utils.book_new();
+
+  // Summary sheet
+  const summaryRows = [['Amex', 'Statement', 'Date', 'Merchant', 'Amount', 'Category', 'Expense Type', 'Rebill To', 'Notes', 'Receipts']];
+  const TYPE_COLORS = {'SEG':'4AA8F0','Jason Personal':'F0A430','Employee Reimburse':'3DD68C','Rebill':'9D8FFF','Refund':'F06060'};
+
+  selectedStmts.forEach(stmt => {
+    stmt.transactions.forEach(txn => {
+      const d = txnData[txn.id] || {};
+      summaryRows.push([
+        'Amex ···' + stmt.acct,
+        stmt.label,
+        txn.date || '',
+        txn.merchant,
+        txn.amount,
+        txn.category || '',
+        d.expenseType || '',
+        d.rebillTarget || '',
+        d.notes || '',
+        (d.receipts || []).length > 0 ? '✓ ' + (d.receipts||[]).length : ''
+      ]);
+    });
+  });
+
+  const summaryWs = XLSX.utils.aoa_to_sheet(summaryRows);
+  // Column widths
+  summaryWs['!cols'] = [
+    {wch:14},{wch:10},{wch:10},{wch:34},{wch:10},{wch:14},{wch:18},{wch:18},{wch:28},{wch:8}
+  ];
+  XLSX.utils.book_append_sheet(wb, summaryWs, 'All Expenses');
+
+  // Per-statement sheets
+  for (const stmt of selectedStmts) {
+    const sheetName = ('···'+stmt.acct+' '+stmt.label).substring(0,31);
+    const rows = [['Date','Merchant','Description','Amount','Category','Expense Type','Rebill To','Notes','Receipts']];
+
+    stmt.transactions.forEach(txn => {
+      const d = txnData[txn.id] || {};
+      rows.push([
+        txn.date || '',
+        txn.merchant,
+        txn.desc || '',
+        txn.amount,
+        txn.category || '',
+        d.expenseType || '',
+        d.rebillTarget || '',
+        d.notes || '',
+        (d.receipts||[]).map(r=>r.name).join('; ')
+      ]);
+    });
+
+    // Totals row
+    const txnCount = stmt.transactions.length;
+    rows.push([]);
+    rows.push(['','TOTAL','',{f:`SUM(D2:D${txnCount+1})`},'','','','','']);
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:10},{wch:30},{wch:24},{wch:10},{wch:14},{wch:18},{wch:18},{wch:24},{wch:30}];
+
+    // Embed receipt images as separate sheet per statement
+    const receiptsForStmt = [];
+    stmt.transactions.forEach(txn => {
+      const d = txnData[txn.id] || {};
+      (d.receipts||[]).forEach(r => {
+        if (r.dataUrl && r.type && r.type.startsWith('image/')) {
+          receiptsForStmt.push({merchant: txn.merchant, date: txn.date, name: r.name, dataUrl: r.dataUrl});
+        }
+      });
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    // Receipts metadata sheet
+    if (receiptsForStmt.length) {
+      const recRows = [['Transaction','Date','Receipt File','Notes']];
+      receiptsForStmt.forEach(r => recRows.push([r.merchant, r.date, r.name, 'Image attached below']));
+      const recWs = XLSX.utils.aoa_to_sheet(recRows);
+      recWs['!cols'] = [{wch:30},{wch:10},{wch:30},{wch:20}];
+      XLSX.utils.book_append_sheet(wb, recWs, (sheetName+' Receipts').substring(0,31));
+    }
+  }
+
+  XLSX.writeFile(wb, 'Expenses_Export_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  showToast('Excel exported ✓');
+}
+
+// ---- PDF EXPORT ----
+async function exportPDF(selectedStmts) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, MARGIN = 14, CW = W - MARGIN*2;
+
+  const ACCT_RGB = {'1049':[124,106,247],'1011':[61,214,140],'1003':[240,164,48]};
+  const TYPE_RGB = {'SEG':[74,168,240],'Jason Personal':[240,164,48],'Employee Reimburse':[61,214,140],'Rebill':[157,143,255],'Refund':[240,96,96]};
+
+  let isFirstPage = true;
+
+  for (const stmt of selectedStmts) {
+    if (!isFirstPage) doc.addPage();
+    isFirstPage = false;
+
+    let y = MARGIN;
+    const acctRgb = ACCT_RGB[stmt.acct] || [124,106,247];
+
+    // Header band
+    doc.setFillColor(...acctRgb);
+    doc.rect(0, 0, W, 22, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text('Amex ···' + stmt.acct + '  —  ' + stmt.label, MARGIN, 13);
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    const catCount = stmt.transactions.filter(t=>txnData[t.id]?.expenseType).length;
+    const totalAmt = stmt.transactions.reduce((s,t)=>s+t.amount,0);
+    doc.text(`${catCount}/${stmt.transactions.length} expenses  ·  $${totalAmt.toLocaleString('en-US',{minimumFractionDigits:2})}`, MARGIN, 19);
+    const exportDate = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    doc.text('Exported ' + exportDate, W - MARGIN, 19, {align:'right'});
+
+    y = 30;
+
+    // Table header
+    doc.setFillColor(30,30,36);
+    doc.rect(MARGIN, y, CW, 7, 'F');
+    doc.setTextColor(120,120,138); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    const cols = [{x:MARGIN+2,w:18,label:'DATE'},{x:MARGIN+21,w:58,label:'MERCHANT'},{x:MARGIN+80,w:16,label:'AMOUNT'},{x:MARGIN+97,w:28,label:'TYPE'},{x:MARGIN+126,w:30,label:'REBILL / NOTES'},{x:MARGIN+157,w:12,label:'RCPT'}];
+    cols.forEach(c => doc.text(c.label, c.x, y+4.8));
+    y += 8;
+
+    // Rows
+    let rowNum = 0;
+    for (const txn of stmt.transactions) {
+      const d = txnData[txn.id] || {};
+      const receiptList = d.receipts || [];
+      const rowH = 9;
+
+      if (y + rowH > 275) { doc.addPage(); y = MARGIN; }
+
+      // Alternating row bg
+      if (rowNum % 2 === 0) { doc.setFillColor(22,22,26); doc.rect(MARGIN, y, CW, rowH, 'F'); }
+      rowNum++;
+
+      doc.setTextColor(232,232,240); doc.setFontSize(8); doc.setFont('helvetica','normal');
+      doc.text(txn.date||'', MARGIN+2, y+5.8, {maxWidth:17});
+      doc.text(txn.merchant, MARGIN+21, y+5.8, {maxWidth:57});
+      doc.setFont('helvetica','bold');
+      doc.text('$'+txn.amount.toFixed(2), MARGIN+96, y+5.8, {align:'right',maxWidth:15});
+      doc.setFont('helvetica','normal');
+
+      // Type badge
+      if (d.expenseType) {
+        const trgb = TYPE_RGB[d.expenseType]||[120,120,138];
+        doc.setFillColor(...trgb.map(v=>Math.round(v*0.25+10)));
+        doc.roundedRect(MARGIN+97, y+1.5, 26, 6, 1, 1, 'F');
+        doc.setTextColor(...trgb); doc.setFontSize(7);
+        doc.text(d.expenseType.substring(0,14), MARGIN+110, y+5.8, {align:'center',maxWidth:25});
+      }
+
+      // Notes / rebill
+      doc.setTextColor(120,120,138); doc.setFontSize(7.5);
+      const noteStr = d.rebillTarget ? '→ '+d.rebillTarget : (d.notes||'').substring(0,28);
+      doc.text(noteStr, MARGIN+126, y+5.8, {maxWidth:29});
+
+      // Receipt count badge
+      if (receiptList.length) {
+        doc.setFillColor(61,214,140);
+        doc.circle(MARGIN+163, y+4.5, 3.5, 'F');
+        doc.setTextColor(10,31,18); doc.setFontSize(7); doc.setFont('helvetica','bold');
+        doc.text(String(receiptList.length), MARGIN+163, y+5.6, {align:'center'});
+      }
+
+      y += rowH;
+    }
+
+    // Totals row
+    y += 2;
+    doc.setDrawColor(60,60,70); doc.setLineWidth(0.3);
+    doc.line(MARGIN, y, MARGIN+CW, y);
+    y += 4;
+    const totalCat = stmt.transactions.filter(t=>txnData[t.id]?.expenseType).reduce((s,t)=>s+t.amount,0);
+    doc.setTextColor(232,232,240); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text('TOTAL CATEGORIZED', MARGIN+2, y+4);
+    doc.text('$'+totalCat.toLocaleString('en-US',{minimumFractionDigits:2}), MARGIN+96, y+4, {align:'right'});
+
+    // ---- RECEIPTS SECTION ----
+    const allReceipts = [];
+    stmt.transactions.forEach(txn => {
+      const d = txnData[txn.id]||{};
+      (d.receipts||[]).forEach(r => { if(r.dataUrl) allReceipts.push({txn, r}); });
+    });
+
+    if (allReceipts.length) {
+      doc.addPage();
+      y = MARGIN;
+
+      // Section header
+      doc.setFillColor(...acctRgb);
+      doc.rect(0, 0, W, 16, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(12); doc.setFont('helvetica','bold');
+      doc.text('Amex ···' + stmt.acct + '  —  ' + stmt.label + '  ·  Receipts', MARGIN, 11);
+      y = 24;
+
+      let imgX = MARGIN, imgY = y;
+      const IMG_W = 85, IMG_H = 60, GAP = 8;
+      let col = 0;
+
+      for (const {txn, r} of allReceipts) {
+        if (imgY + IMG_H > 278) { doc.addPage(); imgY = MARGIN; col = 0; imgX = MARGIN; }
+
+        // Card bg
+        doc.setFillColor(24,24,28);
+        doc.roundedRect(imgX, imgY, IMG_W, IMG_H + 12, 2, 2, 'F');
+
+        // Image
+        if (r.type && r.type.startsWith('image/')) {
+          try {
+            const fmt = r.type.includes('png') ? 'PNG' : 'JPEG';
+            doc.addImage(r.dataUrl, fmt, imgX+1, imgY+1, IMG_W-2, IMG_H-2);
+          } catch(e) {
+            doc.setFillColor(40,40,50); doc.rect(imgX+1,imgY+1,IMG_W-2,IMG_H-2,'F');
+            doc.setTextColor(100,100,120); doc.setFontSize(9);
+            doc.text('Image unavailable', imgX+IMG_W/2, imgY+IMG_H/2, {align:'center'});
+          }
+        } else {
+          doc.setFillColor(40,40,50); doc.rect(imgX+1,imgY+1,IMG_W-2,IMG_H-2,'F');
+          doc.setTextColor(100,100,120); doc.setFontSize(22); doc.setFont('helvetica','bold');
+          doc.text('PDF', imgX+IMG_W/2, imgY+IMG_H/2+4, {align:'center'});
+        }
+
+        // Caption
+        doc.setTextColor(200,200,210); doc.setFontSize(7); doc.setFont('helvetica','bold');
+        doc.text(txn.merchant.substring(0,22), imgX+2, imgY+IMG_H+5, {maxWidth:IMG_W-4});
+        doc.setFont('helvetica','normal'); doc.setTextColor(100,100,120);
+        doc.text((txn.date||'') + '  $'+txn.amount.toFixed(2), imgX+2, imgY+IMG_H+10, {maxWidth:IMG_W-4});
+
+        col++;
+        if (col >= 2) { col=0; imgX=MARGIN; imgY+=IMG_H+16; }
+        else imgX = MARGIN + IMG_W + GAP;
+      }
+    }
+  }
+
+  doc.save('Expenses_Export_' + new Date().toISOString().slice(0,10) + '.pdf');
+  showToast('PDF exported ✓');
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+
+// ===================================================
+// INIT
+// ===================================================
+async function init(){
+  await initDB();
+  await loadLibrary();
+  await loadTxnDB();
+  switchAcct('1049');
+  updateStats();
+}
+init();
+</script>
+</body>
+</html>
